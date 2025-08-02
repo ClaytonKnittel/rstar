@@ -15,3 +15,6 @@ rstar = { path = "../rstar" }
 [[bench]]
 name = "benchmarks"
 harness = false
+
+[dependencies]
+pprof = { version = "0.15.0", features = ["flamegraph"] }

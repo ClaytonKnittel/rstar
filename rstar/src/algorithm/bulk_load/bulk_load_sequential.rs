@@ -5,10 +5,11 @@ use crate::params::RTreeParams;
 use crate::point::Point;
 
 #[cfg(not(test))]
-use alloc::{vec, vec::Vec};
+use alloc::vec::Vec;
 
 #[allow(unused_imports)] // Import is required when building without std
 use num_traits::Float;
+use smallvec::{smallvec, SmallVec};
 
 use super::cluster_group_iterator::{calculate_number_of_clusters_on_axis, ClusterGroupIterator};
 
@@ -27,12 +28,13 @@ where
     let number_of_clusters_on_axis =
         calculate_number_of_clusters_on_axis::<T, Params>(elements.len()).max(2);
 
-    let iterator = PartitioningTask::<_, Params> {
+    let work_queue: SmallVec<[_; 32]> = smallvec![PartitioningState {
+        current_axis: <T::Envelope as Envelope>::Point::DIMENSIONS,
+        elements,
+    }];
+    let iterator = PartitioningTask::<_, _, Params> {
         number_of_clusters_on_axis,
-        work_queue: vec![PartitioningState {
-            current_axis: <T::Envelope as Envelope>::Point::DIMENSIONS,
-            elements,
-        }],
+        work_queue,
         _params: Default::default(),
     };
     ParentNode::new_parent(iterator.collect())
@@ -48,13 +50,22 @@ struct PartitioningState<T: RTreeObject> {
 }
 
 /// Successively partitions the given elements into  cluster groups and finally into clusters.
-struct PartitioningTask<T: RTreeObject, Params: RTreeParams> {
-    work_queue: Vec<PartitioningState<T>>,
+struct PartitioningTask<
+    T: RTreeObject,
+    A: smallvec::Array<Item = PartitioningState<T>>,
+    Params: RTreeParams,
+> {
+    work_queue: SmallVec<A>,
     number_of_clusters_on_axis: usize,
     _params: core::marker::PhantomData<Params>,
 }
 
-impl<T: RTreeObject, Params: RTreeParams> Iterator for PartitioningTask<T, Params> {
+impl<T, A, Params> Iterator for PartitioningTask<T, A, Params>
+where
+    T: RTreeObject,
+    A: smallvec::Array<Item = PartitioningState<T>>,
+    Params: RTreeParams,
+{
     type Item = RTreeNode<T>;
 
     fn next(&mut self) -> Option<Self::Item> {
