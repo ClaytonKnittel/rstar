@@ -32,12 +32,6 @@ impl RTreeParams for Params {
 const DEFAULT_BENCHMARK_TREE_SIZE: usize = 2000;
 
 fn bulk_load_baseline(c: &mut Criterion) {
-    let guard = pprof::ProfilerGuardBuilder::default()
-        .frequency(1000)
-        .blocklist(&["libc", "libgcc", "pthread", "vdso"])
-        .build()
-        .unwrap();
-
     c.bench_function("bulk load baseline", move |b| {
         let points: Vec<_> = create_random_points(DEFAULT_BENCHMARK_TREE_SIZE, SEED_1);
 
@@ -45,11 +39,6 @@ fn bulk_load_baseline(c: &mut Criterion) {
             RTree::<_, Params>::bulk_load_with_params(points.clone());
         });
     });
-
-    if let Ok(report) = guard.report().build() {
-        let file = std::fs::File::create("bulk_load_baseline.svg").unwrap();
-        report.flamegraph(file).unwrap();
-    };
 }
 
 fn bulk_load_comparison(c: &mut Criterion) {
