@@ -28,7 +28,7 @@ where
     let number_of_clusters_on_axis =
         calculate_number_of_clusters_on_axis::<T, Params>(elements.len()).max(2);
 
-    let work_queue: SmallVec<[_; 32]> = smallvec![PartitioningState {
+    let work_queue: SmallVec<[_; 8]> = smallvec![PartitioningState {
         current_axis: <T::Envelope as Envelope>::Point::DIMENSIONS,
         elements,
     }];
